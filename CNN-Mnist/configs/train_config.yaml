@@ -1,0 +1,18 @@
+data:
+  root: 'mnist_data'
+
+training:
+  seed: 42
+  batch_size: 128
+  epochs: 15
+  lr: 0.001         # 改为标准小数格式
+  weight_decay: 0.0001  # 改为标准小数格式
+  grad_clip: 1.0
+
+scheduler:
+  step_size: 5
+  gamma: 0.1        # 改为标准小数格式
+
+checkpoint:
+  dir: './checkpoints'
+  save_interval: 5
