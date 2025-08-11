@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI诗歌生成器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: #4a69bd;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: #4a69bd;
+            outline: none;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: #4a69bd;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #3a59ad;
+        }
+
+        .btn-demo {
+            background: #38ada9;
+        }
+
+        .btn-demo:hover {
+            background: #279a96;
+        }
+
+        .result-container {
+            background: #fff;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid #eee;
+            min-height: 200px;
+        }
+
+        .poem-display {
+            font-size: 1.4rem;
+            line-height: 2.2;
+            text-align: center;
+            font-family: 'KaiTi', 'STKaiti', serif;
+            color: #333;
+            white-space: pre-line;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #4a69bd;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 600px) {
+            .content {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .poem-display {
+                font-size: 1.2rem;
+                line-height: 1.8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI诗歌生成器</h1>
+            <div class="subtitle">基于LSTM的古典诗歌创作系统</div>
+        </header>
+
+        <div class="content">
+            <div class="control-panel">
+                <div class="form-group">
+                    <label for="startText">起始词句</label>
+                    <input type="text" id="startText" placeholder="输入起始词（如：春、明月等）">
+                </div>
+
+                <div class="form-group">
+                    <label for="poemLength">诗歌长度</label>
+                    <select id="poemLength">
+                        <option value="40">四句（40字）</option>
+                        <option value="60" selected>六句（60字）</option>
+                        <option value="80">八句（80字）</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="creativity">创造性（温度参数）</label>
+                    <div class="slider-container">
+                        <input type="range" id="creativity" min="0.1" max="2.0" step="0.1" value="0.8">
+                        <span class="slider-value" id="creativityValue">0.8</span>
+                    </div>
+                </div>
+
+                <button id="generateBtn" class="btn">生成诗歌</button>
+                <button id="demoBtn" class="btn btn-demo">随机示例</button>
+            </div>
+
+            <div class="result-container">
+                <div id="poemResult" class="poem-display">
+                    诗歌将在这里显示...
+                </div>
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>AI正在创作中，请稍候...</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2023 AI诗歌生成系统 | 基于深度学习技术</p>
+        </footer>
+    </div>
+
+    <script>
+        // 更新滑块值显示
+        const creativitySlider = document.getElementById('creativity');
+        const creativityValue = document.getElementById('creativityValue');
+
+        creativitySlider.addEventListener('input', () => {
+            creativityValue.textContent = creativitySlider.value;
+        });
+
+        // 生成按钮事件
+        document.getElementById('generateBtn').addEventListener('click', generatePoem);
+        document.getElementById('demoBtn').addEventListener('click', generateDemo);
+
+        function generatePoem() {
+            const startText = document.getElementById('startText').value.trim();
+            const poemLength = document.getElementById('poemLength').value;
+            const creativity = creativitySlider.value;
+
+            if (!startText) {
+                alert('请输入起始词句');
+                return;
+            }
+
+            showLoading(true);
+
+            // 发送请求到API
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    start_str: startText,
+                    max_length: parseInt(poemLength),
+                    temperature: parseFloat(creativity)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('poemResult').textContent = data.formatted_poem;
+                } else {
+                    document.getElementById('poemResult').textContent = '生成失败: ' + (data.error || '未知错误');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('poemResult').textContent = '请求失败: ' + error.message;
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        }
+
+        function generateDemo() {
+            showLoading(true);
+
+            // 请求演示接口
+            fetch('/demo')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('poemResult').textContent = data.formatted_poem;
+                    document.getElementById('startText').value = data.start_str;
+                } else {
+                    document.getElementById('poemResult').textContent = '生成失败: ' + (data.error || '未知错误');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('poemResult').textContent = '请求失败: ' + error.message;
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const poemResult = document.getElementById('poemResult');
+
+            if (show) {
+                loading.style.display = 'block';
+                poemResult.style.display = 'none';
+            } else {
+                loading.style.display = 'none';
+                poemResult.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
